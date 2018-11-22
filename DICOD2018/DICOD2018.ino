@@ -24,12 +24,37 @@ const uint8_t LED[] = {LED_R, LED_G, LED_B};
 //Definição das variáveis
 int leitura[3];
 int brancoCalibracao[] = {0, 0, 0},
-    pretoCalibracao[] = {1023, 1023, 1023};
+                         pretoCalibracao[] = {1023, 1023, 1023};
+
+void EEPROMWriteInt(int ender, int val) {
+  byte b[4];
+  for(int i = 0; i < 4; i++){
+    if(val > 255){
+      val -= 255;
+      b[i] = 255;
+    }else{
+      b[i] = val;
+      val = 0;
+    }
+    EEPROM.write(ender + i, b[i]);
+  }
+}
+
+int EEPROMReadInt(int ender) {
+  byte b[4];
+  int a = 0;
+  for(int i = 0; i < 4; i++){
+    b[i] = EEPROM.read(ender + i);
+    a += b[i];
+  }
+  
+  return a;
+}
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Iniciando DICOD v2.0 ...");
-  
+
   for (int i = 0; i < 3; i++) {
     pinMode(LED[i], OUTPUT);
     digitalWrite(LED[i], LOW);
@@ -40,17 +65,17 @@ void setup() {
 
   pinMode(BOTAO_COR, INPUT_PULLUP);
   pinMode(BOTAO_CEDULA, INPUT_PULLUP);
-    
-  Serial.flush();
-  while(!Serial.available()); 
 
-  if (EEPROM[0] != 'b' && EEPROM[4] != 'p') {
+  Serial.flush();
+  while (!Serial.available());
+
+  if (EEPROM[0] != 'b' && EEPROM[13] != 'p') {
     calibrarSensor();
   } else {
     Serial.println("Recuperando dados da EEPROM...");
-    for (int i = 1; i < 4; i++) {
-      brancoCalibracao[i] = EEPROM[i];
-      pretoCalibracao[i] = EEPROM[i + 4];
+    for (int i = 0; i < 3; i++) {
+      brancoCalibracao[i] = EEPROMReadInt((i * 4) + 1);
+      pretoCalibracao[i] = EEPROMReadInt((i * 4) + 14);
     }
     Serial.println("Pronto para começar!");
   }
@@ -80,14 +105,14 @@ int mediaLeituras() { //Método que faz n leituras e retorna a média
 }
 
 /*
-void toque(int num, int freq, int tempo) { //Método de saída sonora
+  void toque(int num, int freq, int tempo) { //Método de saída sonora
   for (int i = 0; i < num; i++) {
     tone(BUZZER, freq);
     delay(tempo);
     noTone(BUZZER);
     delay(tempo);
   }
-}
+  }
 */
 
 void lerSensor() { //Método que faz o procedimento de leitura de cada canal RGB da cor
@@ -121,9 +146,9 @@ void calibrarSensor() { //Método que faz 10 médias de cada leitura do sensor p
 
   EEPROM[0] = 'b';
   for (int i = 0; i < 3; i++) {
-    if (brancoCalibracao[i] > EEPROM[i + 1]) {
-      EEPROM[i + 1] = leitura[i];
-    }
+    //if (brancoCalibracao[i] > EEPROM[i + 1]) {
+    EEPROMWriteInt((i * 4) + 1, brancoCalibracao[i]);
+    //}
   }
 
   //toque(3, 98, 300);
@@ -144,11 +169,11 @@ void calibrarSensor() { //Método que faz 10 médias de cada leitura do sensor p
     }
   }
 
-  EEPROM[4] = 'p';
+  EEPROM[13] = 'p';
   for (int i = 0; i < 3; i++) {
-    if (pretoCalibracao[i] < EEPROM[i + 5]) {
-      EEPROM[i + 5] = leitura[i];
-    }
+    //if (pretoCalibracao[i] < EEPROM[i + 5]) {
+    EEPROMWriteInt((i * 4) + 14, pretoCalibracao[i]);
+    //}
   }
   Serial.println("Calibração concluída!");
   delay(1000);
@@ -164,27 +189,29 @@ void converteCores() {
 
 void lerCor() {
   Serial.println("Lendo cor...");
-  delay(500);
+  //delay(500);
+  
   lerSensor();
   converteCores();
-  String cor = "cor_desconhecida";
-  if(branco())
-    cor = "branco";
-  if(preto())
-    cor = "preto";
-  if(vermelho())
-    cor = "vermelho";
-  if(verde())
-    cor = "verde";
-  if(azul())
-    cor = "azul";
-  if(ciano())
-    cor = "azul_claro";
-  if(amarelo())
-    cor = "amarelo";
-  if(magenta())
-    cor = "rosa";
   
+  String cor = "cor_desconhecida";
+  if (branco())
+    cor = "branco";
+  if (preto())
+    cor = "preto";
+  if (vermelho2())
+    cor = "vermelho";
+  if (verde2())
+    cor = "verde";
+  if (azul2())
+    cor = "azul";
+  if (ciano2())
+    cor = "azul_claro";
+  if (amarelo2())
+    cor = "amarelo";
+  if (magenta2())
+    cor = "rosa";
+
   Serial.print("(cor;");
   Serial.print(leitura[0]);
   Serial.print(",");
@@ -196,70 +223,106 @@ void lerCor() {
   Serial.println(")");
 }
 
-boolean branco(){
-  for(int i = 0; i < 3; i++){
-    if(leitura[i] < limSup)
+boolean branco() {
+  for (int i = 0; i < 3; i++) {
+    if (leitura[i] < limSup)
       return false;
   }
   return true;
 }
 
-boolean preto(){
-  for(int i = 0; i < 3; i++){
-    if(leitura[i] > limInf)
+boolean preto() {
+  for (int i = 0; i < 3; i++) {
+    if (leitura[i] > limInf)
       return false;
   }
   return true;
 }
 
-boolean vermelho(){
-  if(leitura[0] < limSup || leitura[1] > limInf || leitura[2] > limInf)
-      return false;
+boolean vermelho() {
+  if (leitura[0] < limSup || leitura[1] > limInf || leitura[2] > limInf)
+    return false;
   return true;
 }
 
-boolean verde(){
-  if(leitura[0] > limInf || leitura[1] < limSup || leitura[2] > limInf)
-      return false;
+boolean vermelho2() {
+  return (leitura[0] > leitura[1] + 50 && leitura[0] > leitura[2] + 50);
+}
+
+boolean verde() {
+  if (leitura[0] > limInf || leitura[1] < limSup || leitura[2] > limInf)
+    return false;
   return true;
 }
 
-boolean azul(){
-  if(leitura[0] > limInf || leitura[1] > limInf || leitura[2] < limSup)
-      return false;
+boolean verde2() {
+  return (leitura[1] > leitura[0] + 50 && leitura[1] > leitura[2] + 50);
+}
+
+boolean azul() {
+  if (leitura[0] > limInf || leitura[1] > limInf || leitura[2] < limSup)
+    return false;
   return true;
 }
 
-boolean magenta(){
-  if(leitura[0] < limSup || leitura[1] > limInf || leitura[2] < limSup)
-      return false;
+boolean azul2() {
+  return (leitura[2] > leitura[0] + 50 && leitura[2] > leitura[1] + 50);
+}
+
+boolean magenta() {
+  if (leitura[0] < limSup || leitura[1] > limInf || leitura[2] < limSup)
+    return false;
   return true;
 }
 
-boolean ciano(){
-  if(leitura[0] > limInf || leitura[1] < limSup || leitura[2] < limSup)
-      return false;
+boolean magenta2(){
+  return (leitura[0] > leitura[1] + 70 && leitura[2] > leitura[1] + 70 && (leitura[0] < leitura[2] + 50  && leitura[0] > leitura[2] - 50));
+}
+
+boolean ciano() {
+  if (leitura[0] > limInf || leitura[1] < limSup || leitura[2] < limSup)
+    return false;
   return true;
 }
 
-boolean amarelo(){
-  if(leitura[0] < limSup || leitura[1] < limSup || leitura[2] > limInf)
-      return false;
+boolean ciano2(){
+  return (leitura[1] > leitura[0] + 70 && leitura[2] > leitura[0] + 70  && (leitura[1] < leitura[2] + 50  && leitura[1] > leitura[2] - 50));
+}
+
+boolean amarelo() {
+  if (leitura[0] < limSup || leitura[1] < limSup || leitura[2] > limInf)
+    return false;
   return true;
+}
+
+boolean amarelo2(){
+  return (leitura[0] > leitura[2] + 70 && leitura[1] > leitura[2] + 70 && (leitura[0] < leitura[1] + 50  && leitura[0] > leitura[1] - 50));
 }
 
 void lerCedula() {
   Serial.println("Lendo cédula...");
-  delay(500);
+  //delay(100);
 
-  String cedula =  "5";
-  if(azul()){
-    //pode ser 2 reais
-    cedula = "2";
+  String cedula = "erro";
+
+  while(digitalRead(BOTAO_CEDULA) == LOW){
+    lerSensor();
+    converteCores();
+    
+    if (azul() || ciano() || azul2() || ciano2()) {
+      cedula = "2";
+      break;
+    } else if (amarelo || amarelo2()){
+      cedula = "20";
+      break;
+    } else if(magenta() || magenta2()){
+      cedula =  "5";
+      break;
+    }
   }
-
   Serial.print("(cedula;");
   Serial.print(cedula);
   Serial.println(")");
+  delay(2000);
 }
 

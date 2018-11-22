@@ -18,11 +18,6 @@ void setup() {
   porta = new Serial(this, "/dev/ttyUSB0", 9600);
   porta.bufferUntil('\n');
   
-  /*textSize(12);
-  textAlign(RIGHT);
-  text("Trabalho Final de CTS 2018.2", 895, 595);
-  delay(2000);*/
-  
   minim = new Minim(this); 
   frameRate(2);
 }
@@ -59,6 +54,11 @@ void draw(){
         text("R = " + r, 800, 450);
         text("G = " + g, 800, 470);
         text("B = " + b, 800, 490);
+        
+        textSize(24);
+        textAlign(CENTER);
+        text(msg, 450, 280);
+        msg = "";
         
         executa(audio);
       }else if(cedula){
@@ -111,10 +111,11 @@ void serialEvent(Serial porta) {
     b = Integer.parseInt(s);
       
     audio = buff.substring(0, buff.indexOf(")"));
+    msg = audio.toUpperCase();
   }else if(buff.indexOf("(cedula") >= 0){//Está reebendo valor de cédula (cedula;2)
     cedula = true;
     valCedula = buff.substring(buff.indexOf(";")+1, buff.indexOf(")"));
-    img = valCedula + ".jpg";
+    img = valCedula + (valCedula.equals("erro") ? ".png" : ".jpg");
     audio = valCedula;
     valCedula += " Reais";
   }else{
