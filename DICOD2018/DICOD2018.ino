@@ -309,14 +309,14 @@ void lerCedula() {
     lerSensor();
     converteCores();
     
-    if (azul() || ciano() || azul2() || ciano2()) {
+    if (dois()){//azul() || ciano() || azul2() || ciano2()) {
       cedula = "2";
       break;
-    } else if (amarelo || amarelo2()){
-      cedula = "20";
+    } else if (dez()){
+      cedula = "10";
       break;
-    } else if(magenta() || magenta2()){
-      cedula =  "5";
+    } else if(vinte()){
+      cedula =  "20";
       break;
     }
   }
@@ -325,4 +325,49 @@ void lerCedula() {
   Serial.println(")");
   delay(2000);
 }
+
+boolean dois(){
+  byte r = 100,
+       g = 140,
+       b = 134;
+  return (leitura[0] > r - 20 && leitura[0] < r + 20 &&
+          leitura[1] > g - 20 && leitura[1] < g + 10 &&
+          leitura[2] > b - 20 && leitura[2] < b + 20);
+}
+
+boolean dez(){
+  byte r = 119,
+       g = 126,
+       b = 111;
+  return (leitura[0] > r - 20 && leitura[0] < r + 20 &&
+          leitura[1] > g - 20 && leitura[1] < g + 20 &&
+          leitura[2] > b - 20 && leitura[2] < b + 20);
+}
+
+boolean vinte(){
+  byte r = 150,
+       g = 140,
+       b = 108;
+  return (leitura[0] > r - 20 && leitura[0] < r + 20 &&
+          leitura[1] > g - 20 && leitura[1] < g + 20 &&
+          leitura[2] > b - 20 && leitura[2] < b + 20);
+}
+/*
+boolean cinquenta(){
+  byte r = ,
+       g = ,
+       b = ;
+  return (leitura[0] > r - 20 && leitura[0] < r + 20 &&
+          leitura[1] > g - 20 && leitura[1] < g + 20 &&
+          leitura[2] > b - 20 && leitura[2] < b + 20);
+}
+
+boolean cem(){
+  byte r = 104,
+       g = 170,
+       b = 170;
+  return (leitura[0] > r - 20 && leitura[0] < r + 20 &&
+          leitura[1] > g - 10 && leitura[1] < g + 10 &&
+          leitura[2] > b - 15 && leitura[2] < b + 15);
+}*/
 
